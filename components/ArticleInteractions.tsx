@@ -164,8 +164,9 @@ export default function ArticleInteractions({
 
   return (
     <div className="space-y-6">
+      {/* Funcionalidades temporariamente desabilitadas */}
       {/* Botões de Interação */}
-      <div className="flex items-center gap-4 border-t border-b py-4">
+      {/* <div className="flex items-center gap-4 border-t border-b py-4">
         <Button
           variant="ghost"
           size="sm"
@@ -196,46 +197,42 @@ export default function ArticleInteractions({
           <Share2 className="w-5 h-5" />
           <span>Compartilhar</span>
         </Button>
-      </div>
+      </div> */}
 
       {/* Seção de Comentários */}
-      {showComments && (
+      {/* {showComments && (
         <Card>
           <CardHeader>
             <CardTitle>Comentários ({commentCount})</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Formulário de novo comentário */}
-            {session?.user && (
-              <div className="flex gap-3">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={session.user.image || ''} />
-                  <AvatarFallback>
-                    <User className="w-4 h-4" />
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-2">
-                  <Textarea
-                    placeholder="Adicione um comentário..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="min-h-[80px]"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleComment}
-                      disabled={!newComment.trim() || loading}
-                      size="sm"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Comentar
-                    </Button>
-                  </div>
+            <div className="flex gap-3">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={session.user.image || ''} />
+                <AvatarFallback>
+                  <User className="w-4 h-4" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 space-y-2">
+                <Textarea
+                  placeholder="Adicione um comentário..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="min-h-[80px]"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleComment}
+                    disabled={!newComment.trim() || loading}
+                    size="sm"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Comentar
+                  </Button>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Lista de comentários */}
             <div className="space-y-4">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3">
@@ -268,7 +265,7 @@ export default function ArticleInteractions({
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
     </div>
   );
 } 

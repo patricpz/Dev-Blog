@@ -132,8 +132,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </div>
           </div>
           
-          {/* Stats */}
-          <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 border-t border-b border-gray-200 dark:border-gray-700 py-4">
+          {/* Stats - Temporariamente desabilitadas */}
+          {/* <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 border-t border-b border-gray-200 dark:border-gray-700 py-4">
             <span className="flex items-center gap-2">
               <span>👏</span>
               <span>{article._count.claps} claps</span>
@@ -146,7 +146,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               <span>📖</span>
               <span>{Math.ceil(article.content.length / 200)} min de leitura</span>
             </span>
-          </div>
+          </div> */}
         </header>
 
         {/* Cover Image */}
@@ -175,7 +175,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Funcionalidades temporariamente desabilitadas */}
+            {/* <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 👏 Aplaudir
               </Button>
@@ -185,7 +186,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 📤 Compartilhar
               </Button>
-            </div>
+            </div> */}
             
             <Link href="/write">
               <Button size="sm" className="w-full sm:w-auto">

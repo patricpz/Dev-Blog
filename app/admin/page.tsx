@@ -84,6 +84,7 @@ export default function AdminDashboard() {
   const [reviewComments, setReviewComments] = useState('');
   const [newUserRole, setNewUserRole] = useState('');
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const showToast = (type: 'success' | 'error', message: string) => {
@@ -197,6 +198,7 @@ export default function AdminDashboard() {
   const handleUserAction = async (action: 'update' | 'delete', userId: number) => {
     try {
       if (action === 'delete') {
+        setDeletingUserId(userId);
         const response = await fetch(`/api/admin/users?id=${userId}`, {
           method: 'DELETE'
         });
@@ -205,7 +207,8 @@ export default function AdminDashboard() {
           setUsers(users.filter(user => user.id !== userId));
           showToast('success', 'Usuário deletado com sucesso');
         } else {
-          showToast('error', 'Falha ao deletar usuário');
+          const data = await response.json().catch(() => null);
+          showToast('error', data?.error || 'Falha ao deletar usuário');
         }
       } else if (action === 'update' && newUserRole) {
         const response = await fetch('/api/admin/users', {
@@ -233,6 +236,10 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Erro ao processar ação:', error);
       showToast('error', 'Erro interno ao processar ação');
+    } finally {
+      if (action === 'delete') {
+        setDeletingUserId(null);
+      }
     }
   };
 
@@ -290,7 +297,7 @@ export default function AdminDashboard() {
       )}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-          <h1 className="text-3xl font-bold">Dashboard de Moderador</h1>
+          <h1 className="text-3xl font-bold">Dashboard de Admin</h1>
           <Link href="/" className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
             Voltar ao Início
           </Link>
@@ -322,14 +329,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 mb-6 flex-col sm:flex-row">
-                <div className="flex-1">
+                {/* <div className="flex-1">
                   <Input
                     placeholder="Buscar artigos..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-sm w-full"
                   />
-                </div>
+                </div> */}
               </div>
 
               <div className="space-y-4">
@@ -348,8 +355,8 @@ export default function AdminDashboard() {
                         )}
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <span>Por: {article.author.name}</span>
-                          <span>👏 {article._count.claps}</span>
-                          <span>💬 {article._count.comments}</span>
+                          {/* <span>👏 {article._count.claps}</span>
+                          <span>💬 {article._count.comments}</span> */}
                           <span>
                             {formatDistanceToNow(new Date(article.created_at), { 
                               addSuffix: true, 
@@ -412,14 +419,14 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 mb-6 flex-col sm:flex-row">
-                <div className="flex-1">
+                {/* <div className="flex-1">
                   <Input
                     placeholder="Buscar usuários..."
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
                     className="max-w-sm w-full"
                   />
-                </div>
+                </div> */}
               </div>
 
               <div className="space-y-4">
@@ -466,7 +473,7 @@ export default function AdminDashboard() {
                             <DialogHeader>
                               <DialogTitle>Alterar tipo de Usuário</DialogTitle>
                               <DialogDescription>
-                                {user.name} - {user.email}
+                                {/* {user.name} - {user.email} */}
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
@@ -477,7 +484,6 @@ export default function AdminDashboard() {
                                 <SelectContent>
                                   <SelectItem value="leitor">Leitor</SelectItem>
                                   <SelectItem value="autor">Escritor</SelectItem>
-                                  <SelectItem value="moderador">Moderador</SelectItem>
                                   <SelectItem value="admin">Admin</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -493,10 +499,18 @@ export default function AdminDashboard() {
                           </DialogContent>
                         </Dialog>
                         
-                        <AlertDialog>
+                        {/* <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="w-4 h-4" />
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              disabled={deletingUserId === user.id}
+                            >
+                              {deletingUserId === user.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -511,12 +525,20 @@ export default function AdminDashboard() {
                               <AlertDialogAction
                                 onClick={() => handleUserAction('delete', user.id)}
                                 className="bg-red-600 hover:bg-red-700"
+                                disabled={deletingUserId === user.id}
                               >
-                                Deletar
+                                {deletingUserId === user.id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Deletando...
+                                  </>
+                                ) : (
+                                  'Deletar'
+                                )}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
-                        </AlertDialog>
+                        </AlertDialog> */}
                       </div>
                     </div>
                   </Card>

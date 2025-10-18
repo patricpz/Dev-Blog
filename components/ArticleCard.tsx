@@ -118,8 +118,8 @@ export default function ArticleCard({ article, showInteractions = true }: Articl
                 </div>
               )}
 
-              {/* Stats */}
-              <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+              {/* Stats - Temporariamente desabilitadas */}
+              {/* <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
                   <span>👏</span>
                   <span>{article._count.claps}</span>
@@ -128,7 +128,7 @@ export default function ArticleCard({ article, showInteractions = true }: Articl
                   <span>💬</span>
                   <span>{article._count.comments}</span>
                 </span>
-              </div>
+              </div> */}
             </div>
           </div>
 

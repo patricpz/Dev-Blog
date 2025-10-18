@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,8 @@ import {
   ArrowLeftIcon, 
   ImageIcon,
   FileTextIcon,
-  AlertCircleIcon
+  AlertCircleIcon,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -23,18 +24,23 @@ interface ArticleFormData {
   subtitle: string;
   coverImageUrl: string;
   content: string;
+  status: string;
 }
 
-export default function WritePage() {
+export default function EditArticlePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const params = useParams();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
     subtitle: '',
     coverImageUrl: '',
     content: '',
+    status: 'rascunho',
   });
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -42,6 +48,8 @@ export default function WritePage() {
     setToast({ type, message });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const articleId = params?.id as string;
 
   // Redirecionar se não estiver autenticado
   if (status === 'loading') {
@@ -56,6 +64,42 @@ export default function WritePage() {
     router.push('/login');
     return null;
   }
+
+  // Carregar dados do artigo
+  useEffect(() => {
+    if (articleId && session) {
+      loadArticle();
+    }
+  }, [articleId, session]);
+
+  const loadArticle = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/articles/${articleId}`);
+      
+      if (response.ok) {
+        const article = await response.json();
+        setFormData({
+          title: article.title || '',
+          subtitle: article.subtitle || '',
+          coverImageUrl: article.cover_image_url || '',
+          content: article.content || '',
+          status: article.status || 'rascunho',
+        });
+      } else if (response.status === 404) {
+        setError('Artigo não encontrado');
+      } else if (response.status === 403) {
+        setError('Você não tem permissão para editar este artigo');
+      } else {
+        setError('Erro ao carregar artigo');
+      }
+    } catch (error) {
+      console.error('Erro ao carregar artigo:', error);
+      setError('Erro ao carregar artigo');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (field: keyof ArticleFormData, value: string) => {
     setFormData(prev => ({
@@ -79,8 +123,8 @@ export default function WritePage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/articles', {
-        method: 'POST',
+      const response = await fetch(`/api/articles/${articleId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -91,16 +135,14 @@ export default function WritePage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         alert('Rascunho salvo com sucesso!');
-        // Opcional: redirecionar para o artigo
-        // router.push(`/article/${data.id}`);
       } else {
-        throw new Error('Erro ao salvar rascunho');
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao salvar rascunho');
       }
     } catch (error) {
       console.error('Erro ao salvar rascunho:', error);
-      alert('Erro ao salvar rascunho. Tente novamente.');
+      alert(`Erro ao salvar rascunho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -119,8 +161,8 @@ export default function WritePage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('/api/articles', {
-        method: 'POST',
+      const response = await fetch(`/api/articles/${articleId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -131,84 +173,83 @@ export default function WritePage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         showToast('success', 'Artigo publicado com sucesso!');
-        router.push(`/article/${data.id}`);
+        router.push(`/article/${articleId}`);
       } else {
-        throw new Error('Erro ao publicar artigo');
+        const data = await response.json();
+        throw new Error(data.error || 'Erro ao publicar artigo');
       }
     } catch (error) {
       console.error('Erro ao publicar artigo:', error);
-      showToast('error', 'Erro ao publicar artigo. Tente novamente.');
+      showToast('error', 'Erro ao publicar artigo');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold">
-                  Escrever Artigo
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Crie e publique seu próximo artigo
-                </p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsPreview(!isPreview)}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                <EyeIcon className="h-4 w-4 mr-2" />
-                {isPreview ? 'Editar' : 'Visualizar'}
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                <SaveIcon className="h-4 w-4 mr-2" />
-                Salvar Rascunho
-              </Button>
-              
-              <Button
-                onClick={handlePublish}
-                disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
-                className="col-span-2 sm:col-span-1 w-full sm:w-auto"
-              >
-                <FileTextIcon className="h-4 w-4 mr-2" />
-                {isSubmitting ? 'Publicando...' : 'Publicar'}
-              </Button>
-            </div>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-gray-600 dark:text-gray-400">Carregando artigo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Erro
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <Button onClick={loadArticle}>
+              Tentar Novamente
+            </Button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeftIcon className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Editar Artigo</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Faça as alterações necessárias no seu artigo
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Editor Principal */}
+          {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Informações Básicas */}
+            {/* Article Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Informações do Artigo</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileTextIcon className="w-5 h-5" />
+                  Informações do Artigo
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -216,10 +257,10 @@ export default function WritePage() {
                     Título *
                   </label>
                   <Input
-                    placeholder="Digite o título do seu artigo..."
+                    placeholder="Digite o título do artigo"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
-                    className="text-base sm:text-lg"
+                    className="text-lg"
                   />
                 </div>
                 
@@ -228,7 +269,7 @@ export default function WritePage() {
                     Subtítulo
                   </label>
                   <Input
-                    placeholder="Digite um subtítulo (opcional)..."
+                    placeholder="Digite um subtítulo (opcional)"
                     value={formData.subtitle}
                     onChange={(e) => handleInputChange('subtitle', e.target.value)}
                   />
@@ -279,83 +320,60 @@ export default function WritePage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Estatísticas */}
+            {/* Ações */}
             <Card>
               <CardHeader>
-                <CardTitle>Estatísticas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Título:</span>
-                  <span className="text-sm font-medium">
-                    {formData.title.length}/100
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Palavras:</span>
-                  <span className="text-sm font-medium">
-                    {formData.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(word => word.length > 0).length}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Caracteres:</span>
-                  <span className="text-sm font-medium">
-                    {formData.content.replace(/<[^>]*>/g, '').length}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Dicas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Dicas para um Bom Artigo</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <AlertCircleIcon className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">
-                    Use títulos e subtítulos para organizar seu conteúdo
-                  </p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <AlertCircleIcon className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">
-                    Adicione imagens para tornar o artigo mais atrativo
-                  </p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <AlertCircleIcon className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm text-muted-foreground">
-                    Revise o conteúdo antes de publicar
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Ações Rápidas */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ações Rápidas</CardTitle>
+                <CardTitle>Ações</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button
-                  variant="outline"
-                  className="w-full justify-start"
                   onClick={handleSaveDraft}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !formData.title.trim()}
+                  className="w-full"
+                  variant="outline"
                 >
-                  <SaveIcon className="h-4 w-4 mr-2" />
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <SaveIcon className="w-4 h-4 mr-2" />
+                  )}
                   Salvar Rascunho
                 </Button>
+                
                 <Button
-                  className="w-full justify-start"
                   onClick={handlePublish}
                   disabled={isSubmitting || !formData.title.trim() || !formData.content.trim()}
+                  className="w-full"
                 >
-                  <FileTextIcon className="h-4 w-4 mr-2" />
-                  Publicar Artigo
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileTextIcon className="w-4 h-4 mr-2" />
+                  )}
+                  Publicar
                 </Button>
+                
+                <Button
+                  onClick={() => setIsPreview(!isPreview)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <EyeIcon className="w-4 h-4 mr-2" />
+                  {isPreview ? 'Editar' : 'Visualizar'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <p><strong>Status atual:</strong> {formData.status}</p>
+                  <p><strong>ID do artigo:</strong> {articleId}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -363,4 +381,4 @@ export default function WritePage() {
       </div>
     </div>
   );
-} 
+}

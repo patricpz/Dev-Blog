@@ -53,14 +53,7 @@ export default function HeaderBar() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center">
-            <Image
-              src={FaviconLogo}
-              alt="Logo"
-              width={40}
-              height={40}
-              className="h-10 w-10 sm:h-12 sm:w-12"
-              priority
-            />
+          <p className="text-2xl font-bold">Blog Dev</p>
           </Link>
         </div>
 
@@ -74,7 +67,7 @@ export default function HeaderBar() {
         {userRole === 'moderador' || userRole === 'admin' ? (
           <Link href="/admin" className="hover:underline flex items-center gap-1">
             <Shield className="w-4 h-4" />
-            Moderador
+            Admin
           </Link>
         ) : null}
         
